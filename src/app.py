@@ -1,5 +1,6 @@
 import asyncio
 import requests
+import toml
 
 from PIL import Image
 from io import BytesIO
@@ -28,6 +29,7 @@ class App:
         self.__app = FastAPI()
 
         self.__setup_routes()
+        self.__toml_path = self.__config.get(key="toml_path", default="pyproject.toml")
 
     def __setup_routes(self):
         if self.__config.get("use_t23d", True):
@@ -46,6 +48,9 @@ class App:
             )
         self.__router.add_api_route(
             "/ping", self.ping, methods=["GET"], response_class=JSONResponse
+        )
+        self.__router.add_api_route(
+            "/config", self.get_config, methods=["GET"], response_class=JSONResponse
         )
 
     async def __save_model(self, user_id: str, path: str) -> None:
@@ -136,3 +141,9 @@ class App:
     # /ping
     async def ping(self):
         return JSONResponse({"message": "pong"}, status_code=200)
+    
+    # /config
+    async def get_config(self):
+        config_data = toml.load(self.__toml_path)
+        return JSONResponse(config_data, status_code=200)
+
